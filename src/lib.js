@@ -40,16 +40,27 @@ class Browser {
     });
   }
   async getBrowser() {
+    if (this.openingBrowser) {
+      throw new Error('osm-static-maps is not ready, please wait a few seconds')
+    }
     if (!this.browser || !this.browser.isConnected()) {
       // console.log('NEW BROWSER')
-      this.browser = await this.launch()
+      this.openingBrowser = true;
+      try {
+        this.browser = await this.launch();
+      }
+      catch (e) {
+        console.log('Error opening browser')
+        console.log(JSON.stringify(e, undefined, 2))
+      }
+      this.openingBrowser = false;
     }
     return this.browser
   }
   async getPage() {
     const browser = await this.getBrowser()
       // console.log("NEW PAGE");
-    return await browser.newPage()
+    return browser.newPage()
   }
 }
 const browser = new Browser();
@@ -73,6 +84,8 @@ function httpGet(url) {
     });
   });
 }
+
+process.on("warning", (e) => console.warn(e.stack));
 
 module.exports = function(options) {
   return new Promise(function(resolve, reject) {
